@@ -1,77 +1,41 @@
 import cv2
 import numpy as np
-
-# Read the image
 im = cv2.imread("images/image.webp")
-
-# Convert image from BGR to Grayscale
 def grayscale(image):
     return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-# Remove noise from the image
-def noise_removal(image):
-    kernel = np.ones((5, 5), np.uint8)
-
+def invert(image):
+    return cv2.bitwise_not(image)
+def blur(image):
+    return cv2.GaussianBlur(image, (5, 5), 0)
+def noise(image):
+    kernel = np.ones((1, 1), np.uint8)
     image = cv2.dilate(image, kernel, iterations=1)
     image = cv2.erode(image, kernel, iterations=1)
     image = cv2.morphologyEx(image, cv2.MORPH_CLOSE, kernel)
     image = cv2.medianBlur(image, 3)
-
     return image
-
-
-# ---------- Processing Pipeline ----------
-
-# Convert to grayscale
-gray_image = grayscale(im)
-
-# Save and display grayscale image
-cv2.imwrite("images/image_gray.webp", gray_image)
-cv2.imshow("Grayscale Image", gray_image)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-
-# Convert to black and white (binarization)
-_, im_bw = cv2.threshold(gray_image, 200, 255, cv2.THRESH_BINARY)
-
-# Save and display binary image
-cv2.imwrite("images/image_bw.webp", im_bw)
-cv2.imshow("Binary Image", im_bw)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-
-# Remove noise
-no_noise = noise_removal(im_bw)
-
-# Save and display cleaned image
-cv2.imwrite("images/image_no_noise.webp", no_noise)
-cv2.imshow("Noise Removed Image", no_noise)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-import cv2
-import numpy as np
-
+def bw(image):
+    return cv2.threshold(image, 100, 255, cv2.THRESH_BINARY)[1]
+def adaptive_threshold(image):
+    return cv2.adaptiveThreshold(image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+def resize(image, width, height):
+    return cv2.resize(image, (width, height))
+def rotate(image):
+    (h, w) = image.shape[:2]
+    center = (w // 5, h // 5)
+    m = cv2.getRotationMatrix2D(center, 90, 1)
+    rotated = cv2.warpAffine(image, m, (w, h))
+    return rotated
 def deskew(image):
-    # Find coordinates of all non-zero (white) pixels
     coords = np.column_stack(np.where(image > 0))
-
-    # Find the angle of the minimum area rectangle
     angle = cv2.minAreaRect(coords)[-1]
-
-    # Correct the angle
     if angle < -45:
         angle = -(90 + angle)
     else:
         angle = -angle
-
-    # Get image dimensions
     (h, w) = image.shape[:2]
     center = (w // 2, h // 2)
-
-    # Create rotation matrix
-    M = cv2.getRotationMatrix2D(center, angle, 1.0)
-
-    # Rotate the image
+    M = cv2.getRotationMatrix2D(center, 90, 1)
     deskewed = cv2.warpAffine(
         image,
         M,
@@ -81,14 +45,7 @@ def deskew(image):
     )
 
     return deskewed
-# Remove noise
-no_noise = noise_removal(im_bw)
-
-# Deskew the image
-deskewed = deskew(no_noise)
-
-# Save and display
-cv2.imwrite("images/image_deskew.webp", deskewed)
-cv2.imshow("Deskewed Image", deskewed)
+cv2.imwrite("output/Images.webp", grayscale(im))
+cv2.imshow("original", deskew(grayscale(im)))
 cv2.waitKey(0)
 cv2.destroyAllWindows()
